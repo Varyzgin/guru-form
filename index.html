@@ -9,7 +9,7 @@
     <h1>WebSocket Client</h1>
     <button onclick="requestMap()">Request Map</button>
     <script>
-        let socket = new WebSocket('ws://YOUR_SERVER_IP:YOUR_SERVER_PORT/websocket');
+        let socket = new WebSocket('ws://localhost:3125/websocket');
 
         socket.onopen = function() {
             console.log('Connected to the server');

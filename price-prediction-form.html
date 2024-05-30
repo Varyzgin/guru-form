@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client</title>
+</head>
+<body>
+    <h1>WebSocket Client</h1>
+    <button onclick="requestMap()">Request Map</button>
+    <script>
+        let socket = new WebSocket('ws://YOUR_SERVER_IP:YOUR_SERVER_PORT/websocket');
+
+        socket.onopen = function() {
+            console.log('Connected to the server');
+        };
+
+        socket.onmessage = function(event) {
+            let blob = new Blob([event.data], { type: 'text/html' });
+            let url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        };
+
+        function requestMap() {
+            socket.send('request_map');
+        }
+
+        socket.onclose = function(event) {
+            if (event.wasClean) {
+                console.log(`Closed cleanly, code=${event.code} reason=${event.reason}`);
+            } else {
+                console.error('Connection died');
+            }
+        };
+
+        socket.onerror = function(error) {
+            console.error(`[error] ${error.message}`);
+        };
+    </script>
+</body>
+</html>

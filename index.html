@@ -1,41 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Client</title>
+    <title>Map with Folium and JavaScript</title>
+    <meta charset="utf-8">
+    <style>
+        #map {
+            width: 100%;
+            height: 80%;
+        }
+        #input-form {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            padding: 10px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
-    <h1>WebSocket Client</h1>
-    <button onclick="requestMap()">Request Map</button>
+    <div id="map"></div>
+    <div id="input-form">
+        <label for="city">Город:</label>
+        <input type="text" id="city" name="city" value="Нижний Новгород" readonly><br>
+        <label for="address">Адрес:</label>
+        <input type="text" id="address" name="address" value="Бориса Панина 1А"><br>
+        <label for="year">Год постройки:</label>
+        <input type="text" id="year" name="year" value="1977"><br>
+        <label for="area">Общая площадь:</label>
+        <input type="text" id="area" name="area" value="63"><br>
+        <button onclick="submitData()">Отправить</button>
+    </div>
+
     <script>
-        let socket = new WebSocket('ws://localhost:3125/websocket');
+        let socket;
 
-        socket.onopen = function() {
-            console.log('Connected to the server');
-        };
+        function submitData() {
+            const city = document.getElementById('city').value;
+            const address = document.getElementById('address').value;
+            const year = document.getElementById('year').value;
+            const area = document.getElementById('area').value;
 
-        socket.onmessage = function(event) {
-            let blob = new Blob([event.data], { type: 'text/html' });
-            let url = URL.createObjectURL(blob);
-            window.open(url, '_blank');
-        };
+            const data = {
+                city: city,
+                address: address,
+                year: year,
+                area: area
+            };
 
-        function requestMap() {
-            socket.send('request_map');
-        }
+            // Устанавливаем соединение с сервером через WebSocket
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                socket = new WebSocket('ws://localhost:3125');
 
-        socket.onclose = function(event) {
-            if (event.wasClean) {
-                console.log(`Closed cleanly, code=${event.code} reason=${event.reason}`);
+                socket.onopen = function(event) {
+                    console.log("WebSocket connection established.");
+                    // Отправляем данные только после установления соединения
+                    socket.send(JSON.stringify(data));
+                    socket.send("sendFile"); // Sending a message to trigger file sending
+
+                };
+
+                socket.onmessage = function(event) {
+                    console.log("Received from server: " + event.data);
+                    // Assuming the server sends back the entire HTML file
+                    var newWindow = window.open();
+                    newWindow.document.write(event.data);
+                    newWindow.document.close();
+                };
+
+                socket.onclose = function(event) {
+                    console.log("WebSocket connection closed.");
+                };
+
+                socket.onerror = function(event) {
+                    console.error("WebSocket error: ", event);
+                };
             } else {
-                console.error('Connection died');
+                socket.send(JSON.stringify(data));
             }
-        };
-
-        socket.onerror = function(error) {
-            console.error(`[error] ${error.message}`);
-        };
+        }
     </script>
 </body>
 </html>

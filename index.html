@@ -21,16 +21,13 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
-    <div id="map"></div>
-    <div id="input-form">
-        <label for="city">Город:</label>
+    <div>
         <input type="text" id="city" name="city" value="Нижний Новгород" readonly><br>
-        <label for="address">Адрес:</label>
-        <input type="text" id="address" name="address" value="Бориса Панина 1А"><br>
-        <label for="year">Год постройки:</label>
-        <input type="text" id="year" name="year" value="1977"><br>
-        <label for="area">Общая площадь:</label>
-        <input type="text" id="area" name="area" value="63"><br>
+        <input type="text" id="address" name="address" placeholder="Адрес"><br>
+        <input type="text" id="area" name="area" placeholder="Общая площадь"><br>
+        <input type="text" id="year" name="year" placeholder="Год постройки"><br>
+        <input type="text" id="floors" name="floors" placeholder="Этажность"><br>
+
         <button onclick="submitData()">Отправить</button>
     </div>
 
@@ -40,47 +37,43 @@
         function submitData() {
             const city = document.getElementById('city').value;
             const address = document.getElementById('address').value;
-            const year = document.getElementById('year').value;
             const area = document.getElementById('area').value;
+            const year = document.getElementById('year').value;
+            const floors = document.getElementById('floors').value;
 
             const data = {
                 city: city,
                 address: address,
+                area: area,
                 year: year,
-                area: area
+                floors: floors
             };
 
             // Устанавливаем соединение с сервером через WebSocket
-            if (!socket || socket.readyState !== WebSocket.OPEN) {
-                socket = new WebSocket('ws://localhost:3125');
+        var socket = new WebSocket('ws://89.109.9.132:3125');
+        console.log(data);
 
-                socket.onopen = function(event) {
-                    console.log("WebSocket connection established.");
-                    // Отправляем данные только после установления соединения
-                    socket.send(JSON.stringify(data));
-                    socket.send("sendFile"); // Sending a message to trigger file sending
+        socket.onopen = function(event) {
+            console.log("WebSocket connection established.");
+            // Отправляем данные только после установления соединения
+            socket.send(JSON.stringify(data));
+        };
 
-                };
+        socket.onmessage = function(event) {
+            console.log("Received from server: " + event.data);
+            var newWindow = window.open();
+            newWindow.document.write(event.data);
+            newWindow.document.close();
+        };
 
-                socket.onmessage = function(event) {
-                    console.log("Received from server: " + event.data);
-                    // Assuming the server sends back the entire HTML file
-                    var newWindow = window.open();
-                    newWindow.document.write(event.data);
-                    newWindow.document.close();
-                };
+        socket.onclose = function(event) {
+            console.log("WebSocket connection closed.");
+        };
 
-                socket.onclose = function(event) {
-                    console.log("WebSocket connection closed.");
-                };
-
-                socket.onerror = function(event) {
-                    console.error("WebSocket error: ", event);
-                };
-            } else {
-                socket.send(JSON.stringify(data));
-            }
-        }
-    </script>
+        socket.onerror = function(event) {
+            console.error("WebSocket error: ", event);
+        };
+    }
+</script>
 </body>
 </html>
